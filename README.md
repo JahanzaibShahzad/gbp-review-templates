@@ -25,9 +25,21 @@ python gbp_reply.py --rating 5 --text "Great fitting, fair prices." --business "
 # Draft a reply for a 2-star review (no business name needed)
 python gbp_reply.py --rating 2 --text "Waited 30 minutes for my order."
 
+# Address the reviewer by name (some templates use it)
+python gbp_reply.py --rating 5 --text "Lovely shop." --reviewer "Sarah" --business "AA Garments"
+
 # Use a seed for a reproducible pick (otherwise random)
 python gbp_reply.py --rating 5 --text "Lovely shop." --seed 1
+
+# Draft replies for a whole list at once
+python gbp_reply.py --batch reviews.csv --output replies.csv --business "AA Garments"
 ```
+
+Batch input is a CSV with columns `rating`, `text`, `reviewer` (reviewer
+optional, text may be empty). The output CSV has one row per review with
+the situation and the drafted reply. Rows with an invalid rating are
+skipped with a warning, the rest are still processed. If `--output` is
+left out, replies go to `replies.csv` in the current folder.
 
 You can also import it:
 

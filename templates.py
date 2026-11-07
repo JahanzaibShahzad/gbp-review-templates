@@ -3,6 +3,7 @@
 Each entry is a template string that accepts these placeholders:
   {business}  business name
   {owner}     owner/reviewer-facing name (optional)
+  {reviewer}  the reviewer's name (optional, falls back to nothing)
 
 Keep every template free of the em dash character, and keep them
 short: one to three sentences, exactly how a real owner would write.
@@ -13,6 +14,7 @@ TEMPLATES = {
         "Thank you so much for the 5 stars, {business} really appreciates your kind words. We look forward to seeing you again soon!",
         "This made our day. Thank you for choosing {business} and for taking the time to leave such a great review.",
         "We are so glad you had a great experience with us. Thank you for the 5-star review, and we hope to serve you again!",
+        "Thank you, {reviewer}, for the 5 stars! {business} really appreciates your kind words, and we hope to see you again soon.",
     ],
     "five_star_no_text": [
         "Thank you for the 5-star rating! We appreciate your support and look forward to seeing you again.",
@@ -21,6 +23,7 @@ TEMPLATES = {
     "four_star": [
         "Thank you for the 4-star review and your feedback. We would love to know what would have made it a 5-star visit, so please tell us next time you are in.",
         "Thanks for the kind review! We are always looking to improve, so feel free to share any suggestions with us.",
+        "Thank you, {reviewer}, for the kind review! {business} is always looking to improve, so feel free to share any suggestions with us.",
     ],
     "three_star": [
         "Thank you for your honest feedback. We are sorry your visit was only average, and we would like to make your next one better. Please reach out to us directly so we can help.",
@@ -69,9 +72,19 @@ def get_templates(situation):
     return TEMPLATES[situation]
 
 
-def render(template, business="", owner=""):
-    """Fill placeholders in a template."""
-    return template.format(
+def render(template, business="", owner="", reviewer=""):
+    """Fill placeholders in a template.
+
+    A template that mentions {reviewer} with no reviewer given reads
+    a little odd ("Thank you, , for ..."), so strip the empty name
+    and tidy the leftover punctuation instead of leaving a gap.
+    """
+    text = template.format(
         business=business or "our business",
         owner=owner or "the team",
+        reviewer=(reviewer or "").strip(),
     )
+    if not (reviewer or "").strip():
+        text = text.replace("Thank you, , for", "Thank you for")
+        text = text.replace(", ,", ",")
+    return text

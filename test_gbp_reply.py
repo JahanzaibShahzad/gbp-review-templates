@@ -48,6 +48,44 @@ class TestDraftReply(unittest.TestCase):
         self.assertNotIn("{business}", reply)
         self.assertEqual(situation, "one_two_star")
 
+    def test_reviewer_name_used_when_given(self):
+        reply, _ = draft_reply(5, "great", "X", reviewer="Sarah", seed=0)
+        self.assertIn("Sarah", reply)
+
+    def test_no_reviewer_leaves_no_gap(self):
+        # Seed 0 picks the reviewer template; with no reviewer given the
+        # name slot must vanish cleanly instead of leaving "Thank you, ,".
+        reply, _ = draft_reply(5, "great", "X", seed=0)
+        self.assertNotIn(", ,", reply)
+        self.assertNotIn("Thank you, ,", reply)
+        self.assertNotIn("{reviewer}", reply)
+        self.assertTrue(reply.startswith("Thank you for the 5 stars"))
+
+
+class TestBatch(unittest.TestCase):
+    def test_batch_writes_replies_csv(self):
+        import csv
+        import tempfile
+        import os
+        from gbp_reply import batch_reviews
+        with tempfile.TemporaryDirectory() as tmp:
+            src = os.path.join(tmp, "in.csv")
+            out = os.path.join(tmp, "out.csv")
+            with open(src, "w", newline="", encoding="utf-8") as f:
+                f.write("rating,text,reviewer\n")
+                f.write('5,"Lovely shop.",Sarah\n')
+                f.write("2,Waited too long,\n")
+                f.write("9,Not a real rating,\n")
+            written, skipped = batch_reviews(src, out, business="X", seed=0)
+            self.assertEqual((written, skipped), (2, 1))
+            with open(out, newline="", encoding="utf-8") as f:
+                rows = list(csv.DictReader(f))
+            self.assertEqual(len(rows), 2)
+            self.assertEqual(rows[0]["reviewer"], "Sarah")
+            self.assertEqual(rows[0]["situation"], "5-star review with written feedback")
+            self.assertIn("Sarah", rows[0]["reply"])
+            self.assertEqual(rows[1]["situation"], "1-2 star negative review")
+
 
 class TestStyle(unittest.TestCase):
     def test_no_em_dash_anywhere(self):
